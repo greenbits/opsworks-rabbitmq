@@ -97,9 +97,9 @@ else
   existing_erlang_key = ''
 end
 
-if node['rabbitmq']['cluster'] && (node['rabbitmq']['erlang_cookie'] != existing_erlang_key)
-  include_recipe 'opsworks_rabbitmq::cluster'
+include_recipe 'opsworks_rabbitmq::cluster' if node['rabbitmq']['clustering']['enable']
 
+if node['rabbitmq']['clustering']['enable'] && (node['rabbitmq']['erlang_cookie'] != existing_erlang_key)
   log "stop #{node['rabbitmq']['serice_name']} to change erlang cookie" do
     notifies :stop, "service[#{node['rabbitmq']['service_name']}]", :immediately
   end
@@ -118,5 +118,29 @@ if node['rabbitmq']['cluster'] && (node['rabbitmq']['erlang_cookie'] != existing
   execute 'reset-node' do
     command 'rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl start_app'
     action :nothing
+  end
+end
+
+if node['rabbitmq']['clustering']['enable']
+  cluster_nodes = node['rabbitmq']['clustering']['cluster_nodes']
+  cluster_nodes = cluster_nodes.to_json
+
+  # Manual clustering
+  unless node['rabbitmq']['clustering']['use_auto_clustering']
+    # Join in cluster
+    rabbitmq_cluster cluster_nodes do
+      cluster_name node['rabbitmq']['clustering']['cluster_name']
+      action :join
+    end
+  end
+
+  # Set cluster name : It will be skipped once same cluster name has been set in the cluster.
+  rabbitmq_cluster cluster_nodes do
+    cluster_name node['rabbitmq']['clustering']['cluster_name']
+    action :set_cluster_name
+  end
+  # Change the cluster node type
+  rabbitmq_cluster cluster_nodes do
+    action :change_cluster_node_type
   end
 end

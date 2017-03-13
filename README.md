@@ -22,8 +22,8 @@ cookbook.
 
 ### Cookbooks
 
-* **erlang** (≥ 0.9)
-* **rabbitmq** (≥ 3.7)
+* **erlang** (≥ 4.1.1)
+* **rabbitmq** (≥ 4.10.0)
 
 ## Attributes
 
@@ -61,7 +61,7 @@ as long as it runs after `rabbitmq::install` recipe.
 ### opsworks_rabbitmq::cluster
 
 Automatically gathers all instances in your stack layer and automatically
-generates the `node['rabbitmq']['cluster_disk_nodes']` list required for
+generates the `node['rabbitmq']['cluster_nodes']` list required for
 clustering setup in `opsworks_rabbitmq::configure`.
 
 Because the list of nodes needs to be updated when a layer instance goes online

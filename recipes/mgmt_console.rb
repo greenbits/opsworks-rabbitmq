@@ -1,7 +1,7 @@
 # Encoding: utf-8
 #
 # Cookbook Name:: opsworks_rabbitmq
-# Recipe:: cluster
+# Recipe:: mgmt_console
 #
 # Copyright (c) 2015, Verdigris Technologies Inc
 # All rights reserved.
@@ -27,12 +27,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Configurable through stack's custom JSON
-rabbitmq_layer = node['rabbitmq']['opsworks']['layer_name']
+plugins = %w( rabbitmq_management rabbitmq_management_visualiser )
 
-layer = search('aws_opsworks_layer', "shortname:#{rabbitmq_layer}").first
+service_name = node['rabbitmq']['service_name']
 
-instances = search('aws_opsworks_instance', "layer_ids:#{layer['layer_id']} AND status:online")
-rabbitmq_cluster_nodes = instances.map{ |attrs| { 'name' => "rabbit@#{attrs['hostname']}" } }
-Chef::Log.info "Setting cluster_nodes to #{rabbitmq_cluster_nodes.inspect}"
-node.set['rabbitmq']['clustering']['cluster_nodes'] = rabbitmq_cluster_nodes
+plugins.each do |plugin|
+  rabbitmq_plugin plugin do
+    action :enable
+    notifies :restart, "service[#{service_name}]", :immediately
+  end
+end
